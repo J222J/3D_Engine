@@ -8,10 +8,21 @@
 #include<string>
 #include<vector>
 
+const float PI = 3.1415926536;
+
 class position2D;
 class colour;
 
-void line(position2D a, position2D b, colour color, float thickness);
+void clamp(float &value, float left, float right) {
+	if (value < left)
+		value = left;
+	else if (value > right)
+		value = right;
+}
+
+bool default_ondisplay(position2D pos);
+
+void line(position2D a, position2D b, colour color, float thickness, bool (*on_display)(position2D) = &default_ondisplay);
 
 class vector2D {
 public:
@@ -40,8 +51,41 @@ class vector3D {
 public:
 	float x, y, z;
 
+private:
+	void rotate_x(float angle) {
+		float new_y = y * cos(angle) - z * sin(angle);
+		float new_z = y * sin(angle) + z * cos(angle);
+
+		y = new_y;
+		z = new_z;
+	}
+
+	void rotate_y(float angle) {
+		float new_x = x * cos(angle) - z * sin(angle);
+		float new_z = x * sin(angle) + z * cos(angle);
+
+		x = new_x;
+		z = new_z;
+	}
+
+	void rotate_z(float angle) {
+		float new_y = y * cos(angle) - x * sin(angle);
+		float new_x = y * sin(angle) + x * cos(angle);
+
+		y = new_y;
+		x = new_x;
+	}
+
+public:
+
 	float length() {
 		return sqrt(x*x + y*y + z*z);
+	}
+
+	void rotate(float x_rotation, float y_rotation, float z_rotation) { // x_rotation -> around x axis, y_rotation -> y axis, z_rotation -> z axis
+		rotate_x(x_rotation * PI / 180);
+		rotate_y(y_rotation * PI / 180);
+		rotate_z(z_rotation * PI / 180);
 	}
 
 	vector3D normalized() {
@@ -60,6 +104,18 @@ public:
 	~vector3D() = default;
 };
 
+float dot_product(vector3D a, vector3D b) { // I know this as scalar product so this comment is just for me
+	return a.x*b.x + a.y*b.y + a.z*b.z;
+}
+
+float angle(vector3D a, vector3D b) {
+	float dot_p = dot_product(a, b);
+	dot_p /= a.length() * b.length();
+
+	std::cout<< dot_p << '\n';
+	return acos(dot_p) * 180 / PI;
+}
+
 class position2D {
 public:
 	float x, y;
@@ -76,6 +132,47 @@ class position3D {
 public:
 	float x, y, z;
 
+private:
+	void rotate_x(float angle) {
+		float new_y = y * cos(angle) - z * sin(angle);
+		float new_z = y * sin(angle) + z * cos(angle);
+
+		y = new_y;
+		z = new_z;
+	}
+
+	void rotate_y(float angle) {
+		float new_x = x * cos(angle) - z * sin(angle);
+		float new_z = x * sin(angle) + z * cos(angle);
+
+		x = new_x;
+		z = new_z;
+	}
+
+	void rotate_z(float angle) {
+		float new_y = y * cos(angle) - x * sin(angle);
+		float new_x = y * sin(angle) + x * cos(angle);
+
+		y = new_y;
+		x = new_x;
+	}
+
+public:
+	
+	void rotate(float x_rotation, float y_rotation, float z_rotation, position3D around) { // x_rotation -> around x axis, y_rotation -> y axis, z_rotation -> z axis
+		x -= around.x;
+		y -= around.y;
+		z -= around.z;
+
+		rotate_x(x_rotation * PI / 180);
+		rotate_y(y_rotation * PI / 180);
+		rotate_z(z_rotation * PI / 180);
+	
+		x += around.x;
+		y += around.y;
+		z += around.z;
+	}
+
 	position3D(float xx, float yy, float zz) {
 		x = xx;
 		y = yy;
@@ -84,6 +181,10 @@ public:
 
 	~position3D() = default;
 };
+
+vector3D to_vector(position3D a, position3D b) { // vector from position A to position B dunno wtf else to name this shit
+	return vector3D{b.x-a.x, b.y-a.x, b.z-a.z};
+}
 
 class colour {
 public:
@@ -142,7 +243,7 @@ private:
 	position3D separate_into_position3D(std::string line) {
 		std::vector<std::string> strs = separate(line);
 
-		return position3D{std::stof(strs[0]), std::stof(strs[1]), std::stof(strs[2])};
+		return position3D{std::stof(strs[0]), -std::stof(strs[1]), std::stof(strs[2])};
 	}
 
 public:
@@ -166,7 +267,7 @@ public:
 			}
 		}
 
-		std::cout<< "POST COMPUTATION CHECKS :\n";
+		/*std::cout<< "POST COMPUTATION CHECKS :\n";
 		std::cout<< "vertices : " << vertices.size() << '\n';
 		for (auto e : vertices) {
 			std::cout<< "\t(" << e.x << "; " << e.y << "; " << e.z << ")\n";
@@ -177,7 +278,7 @@ public:
 			for (int ind : e)
 				std::cout<< ind << ' ';
 			std::cout<< '\n';
-		}
+		}*/
 	}
 
 	~object() = default;
@@ -185,31 +286,86 @@ public:
 
 class camera {
 public:
-	float rotation_x, rotation_y, rotation_z;
-	float x, y, z; // center of the screen
-	float focal_length; // position of the focal point when no rotation is applied is x, y, z-focal_length
-	float width, height; // best for this to be the same as the screen resolution
+	float rotation_x, rotation_y, rotation_z; // in degrees
+	float x, y, z; // center of the screen || changing this to position of focal point
+		float focal_length; // position of the focal point when no rotation is applied is {x, y, z-focal_length} || will be changed to {x, y, z}
+	float width, height; // (resolution) best for this to be the same as the screen resolution, if not a custom handler for displaying what the camera sees will need to be coded.
 
+	float cam_width = 1.0f, cam_height; // actual width/height
+
+	position3D return_position3D() {
+		return position3D{x, y, z}; // this should be {x, y, z-focal_length} but rn it gets fucked if I do that || being changed
+	}
+
+	vector3D forward() {
+		vector3D vec(0, 0, 1);
+		vec.rotate(rotation_x, rotation_y, rotation_z);
+
+		return vec;
+	}
+
+	/* this entire shit might need to be re-written || currently re-writing this part
 	position2D on_screen(position3D position) { // find where a position would be drawn on screen
-		float yp = focal_length*(position.y-y)/(position.z-z+focal_length);
+		vector3D forw = forward();
+		vector3D to_pos = to_vector(return_position3D(), position);
+
+		std::cout<< dot_product(to_pos, forw) << '\n';
+		if (dot_product(forw, to_pos) < 0)
+			return position2D{-1, -1};
+
+		position.rotate(-rotation_x, -rotation_y, -rotation_z, return_position3D());
+
+		float x1 = position.x;
+		float y1 = position.y;
+		float z1 = position.z;
+
+		float yp = focal_length*200*(y1-y)/(200*z1-200*z+focal_length);
 		float coordinate_y = yp + height/2;
 
-		float xp = focal_length*(position.x-x)/(position.z-z+focal_length);
+		float xp = focal_length*200*(x1-x)/(200*z1-200*z+focal_length);
 		float coordinate_x = xp + width/2;
+
+		return position2D{coordinate_x, coordinate_y};
+	} */
+
+	position2D on_screen(position3D position) {
+		// add a check here to see if it's off screen maybe?
+		vector3D forw = forward();
+		vector3D to_pos = to_vector(return_position3D(), position);
+
+		if (dot_product(forw, to_pos) < 0)
+			return position2D{-1, -1};
+
+		position.rotate(-rotation_x, -rotation_y, -rotation_z, return_position3D());
+
+		float x1 = position.x;
+		float y1 = position.y;
+		float z1 = position.z;
+
+		float yp = focal_length * (y1-y) / (z1-z);
+		float relative_coordinate_y = yp + cam_height/2;
+
+		float xp = focal_length * (x1-x) / (z1-z);
+		float relative_coordinate_x = xp + cam_width/2;
+
+		float coordinate_y = height * relative_coordinate_y / cam_height;
+		float coordinate_x = width * relative_coordinate_x / cam_width;
 
 		return position2D{coordinate_x, coordinate_y};
 	}
 
-	position3D return_position3D() {
-		return position3D{x, y, z};
+	void move(vector3D direction, float mult) {
+		x += direction.x * mult;
+		y += direction.y * mult;
+		z += direction.z * mult;
 	}
 
-	void draw_object(object obj) {
+	void draw_object(object obj, bool (*on_display)(position2D) = &default_ondisplay) {
 		std::vector<position3D> verts = obj.vertices;
 
 		for (auto face : obj.faces) {
 			for (int i = 0; i < face.size(); i++) {
-				line(on_screen(verts[face[i]-1]), on_screen(verts[face[(i+1)%face.size()]-1]), colour{0, 0, 0}, 1.0f);
+				line(on_screen(verts[face[i]-1]), on_screen(verts[face[(i+1)%face.size()]-1]), colour{0, 0, 0}, 1.0f, on_display);
 			}
 		}
 	}
@@ -219,16 +375,24 @@ public:
 		y = yy;
 		z = zz;
 
-		focal_length = ifocal_length;
+		focal_length = ifocal_length*10;
 		width = iwidth;
 		height = iheight;
+
+		cam_height = height/width;
 	}
 
 	~camera() = default;
 };
 
-void line(position2D a, position2D b, colour color, float thickness) { // I'll maybe handle this later, std::function<bool(position2D)> onscreen = [&]{return true;}) {
-	std::cout<< "FROM : (" << a.x << "; " << a.y << "), TO : (" << b.x << "; " << b.y << ")\n";
+bool default_ondisplay(position2D pos) {
+	return true;
+}
+
+void line(position2D a, position2D b, colour color, float thickness, bool (*on_display)(position2D)) { //= &default_ondisplay) {
+	//std::cout<< "FROM : (" << a.x << "; " << a.y << "), TO : (" << b.x << "; " << b.y << ")\n";
+	if (!on_display(a) and !on_display(b))
+		return;
 
 	float dx = b.x-a.x;
 	float dy = b.y-a.y;
@@ -246,7 +410,8 @@ void line(position2D a, position2D b, colour color, float thickness) { // I'll m
 	steps++;
 	glBegin(GL_POINTS);
 	while (steps--) {
-		glVertex2f(cur_x, cur_y);
+		if (on_display(position2D{cur_x, cur_y}))
+			glVertex2f(cur_x, cur_y);
 		cur_x += x_step;
 		cur_y += y_step;
 	}
