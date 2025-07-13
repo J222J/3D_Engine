@@ -1,5 +1,3 @@
-#3D "Engine"
-
 3D "Engine" made with C++ using OpenGL.
 
 This project is currently unusable by anyone other than me but feel free to mess around with it.
