@@ -181,6 +181,10 @@ public:
 		return copy;
 	}
 
+	position3D offset(position3D offset) {
+		return position3D{x+offset.x, y+offset.y, z+offset.z};
+	}
+
 	position3D(float xx, float yy, float zz) {
 		x = xx;
 		y = yy;
@@ -215,55 +219,6 @@ public:
 	std::vector<std::vector<int>> faces;
 
 private:
-/*	void rotate_x(float angle) {
-		float new_y = y * cos(angle) - z * sin(angle);
-		float new_z = y * sin(angle) + z * cos(angle);
-
-		y = new_y;
-		z = new_z;
-
-		for (auto &e : vertices) {
-			new_y = e.y * cos(angle) - e.z * sin(angle);
-			new_z = e.y * sin(angle) + e.z * cos(angle);
-
-			e.y = new_y;
-			e.z = new_z;
-		}
-	}
-
-	void rotate_y(float angle) {
-		float new_x = x * cos(angle) - z * sin(angle);
-		float new_z = x * sin(angle) + z * cos(angle);
-
-		x = new_x;
-		z = new_z;
-
-		for (auto &e : vertices) {
-			new_x = e.x * cos(angle) - e.z * sin(angle);
-			new_z = e.x * sin(angle) + e.z * cos(angle);
-
-			e.x = new_x;
-			e.z = new_z;
-		}
-	}
-
-	void rotate_z(float angle) {
-		float new_y = y * cos(angle) - x * sin(angle);
-		float new_x = y * sin(angle) + x * cos(angle);
-
-		y = new_y;
-		x = new_x;
-
-		for (auto &e : vertices) {
-			new_y = e.y * cos(angle) - e.x * sin(angle);
-			new_x = e.y * sin(angle) + e.x * cos(angle);
-
-			e.y = new_y;
-			e.x = new_x;
-		}
-	}
-*/
-
 	std::vector<std::string> separate(std::string line) {
 		std::vector<std::string> strings;
 		int ind = 2;
@@ -310,31 +265,6 @@ private:
 	}
 
 public:
-
-	/*void rotate(float x_rotation, float y_rotation, float z_rotation, position3D around) { // x_rotation -> around x axis, y_rotation -> y axis, z_rotation -> z axis
-		x -= around.x;
-		y -= around.y;
-		z -= around.z;
-		for (auto &e : vertices) {
-			e.x -= around.x;
-			e.y -= around.y;
-			e.z -= around.z;
-		}
-
-		rotate_y(y_rotation * PI / 180);
-		rotate_x(x_rotation * PI / 180);
-		rotate_z(z_rotation * PI / 180);
-	
-		x += around.x;
-		y += around.y;
-		z += around.z;
-		for (auto &e : vertices) {
-			e.x += around.x;
-			e.y += around.y;
-			e.z += around.z;
-		}
-	}*/
-
 	position3D return_position3D() {
 		return position3D{x, y, z};
 	}
@@ -394,7 +324,21 @@ public:
 		vector3D vec(0, 0, 1);
 		vec.rotate(rotation_x, rotation_y, rotation_z);
 
-		return vec;
+		return vec.normalized();
+	}
+
+	vector3D up() {
+		vector3D vec(0, -1, 0);
+		vec.rotate(rotation_x, rotation_y, rotation_z);
+
+		return vec.normalized();
+	}
+
+	vector3D right() {
+		vector3D vec(1, 0, 0);
+		vec.rotate(rotation_x, rotation_y, rotation_z);
+
+		return vec.normalized();
 	}
 
 	/* this entire shit might need to be re-written || currently re-writing this part
@@ -458,7 +402,8 @@ public:
 
 		for (auto face : obj.faces) {
 			for (int i = 0; i < face.size(); i++) {
-				line(on_screen(verts[face[i]-1].rotated(obj.rotation_x, obj.rotation_y, obj.rotation_z, obj.return_position3D()), offset), on_screen(verts[face[(i+1)%face.size()]-1].rotated(obj.rotation_x, obj.rotation_y, obj.rotation_z, obj.return_position3D()), offset), colour{0, 0, 0}, 1.0f, on_display);
+				//line(on_screen(verts[face[i]-1].rotated(obj.rotation_x, obj.rotation_y, obj.rotation_z, obj.return_position3D()), offset), on_screen(verts[face[(i+1)%face.size()]-1].rotated(obj.rotation_x, obj.rotation_y, obj.rotation_z, obj.return_position3D()), offset), colour{0, 0, 0}, 1.0f, on_display);
+				line(on_screen(verts[face[i]-1].offset(obj.return_position3D()).rotated(obj.rotation_x, obj.rotation_y, obj.rotation_z, obj.return_position3D()), offset), on_screen(verts[face[(i+1)%face.size()]-1].offset(obj.return_position3D()).rotated(obj.rotation_x, obj.rotation_y, obj.rotation_z, obj.return_position3D()), offset), colour{0, 0, 0}, 1.0f, on_display);
 			}
 		}
 	}
