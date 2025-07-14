@@ -108,6 +108,10 @@ float dot_product(vector3D a, vector3D b) { // I know this as scalar product so 
 	return a.x*b.x + a.y*b.y + a.z*b.z;
 }
 
+float dot_product(vector2D a, vector2D b) {
+	return a.x*b.x + a.y*b.y;
+}
+
 float angle(vector3D a, vector3D b) {
 	float dot_p = dot_product(a, b);
 	dot_p /= a.length() * b.length();
@@ -310,14 +314,14 @@ public:
 class camera {
 public:
 	float rotation_x, rotation_y, rotation_z; // in degrees
-	float x, y, z; // center of the screen || changing this to position of focal point
-		float focal_length; // position of the focal point when no rotation is applied is {x, y, z-focal_length} || will be changed to {x, y, z}
+	float x, y, z; // changing this to position of focal point
+	float focal_length;
 	float width, height; // (resolution) best for this to be the same as the screen resolution, if not a custom handler for displaying what the camera sees will need to be coded.
 
 	float cam_width = 1.0f, cam_height; // actual width/height
 
 	position3D return_position3D() {
-		return position3D{x, y, z}; // this should be {x, y, z-focal_length} but rn it gets fucked if I do that || being changed
+		return position3D{x, y, z};
 	}
 
 	vector3D forward() {
@@ -340,30 +344,6 @@ public:
 
 		return vec.normalized();
 	}
-
-	/* this entire shit might need to be re-written || currently re-writing this part
-	position2D on_screen(position3D position) { // find where a position would be drawn on screen
-		vector3D forw = forward();
-		vector3D to_pos = to_vector(return_position3D(), position);
-
-		std::cout<< dot_product(to_pos, forw) << '\n';
-		if (dot_product(forw, to_pos) < 0)
-			return position2D{-1, -1};
-
-		position.rotate(-rotation_x, -rotation_y, -rotation_z, return_position3D());
-
-		float x1 = position.x;
-		float y1 = position.y;
-		float z1 = position.z;
-
-		float yp = focal_length*200*(y1-y)/(200*z1-200*z+focal_length);
-		float coordinate_y = yp + height/2;
-
-		float xp = focal_length*200*(x1-x)/(200*z1-200*z+focal_length);
-		float coordinate_x = xp + width/2;
-
-		return position2D{coordinate_x, coordinate_y};
-	} */
 
 	position2D on_screen(position3D position, position2D offset) {
 		// add a check here to see if it's off screen maybe?
@@ -441,6 +421,14 @@ bool operator==(const vector3D& a, const vector3D& b) {
 
 bool operator==(const colour& a, const colour& b) {
 	return (a.r == b.r and a.g == b.g and a.b == b.b);
+}
+
+float operator*(const vector3D& a, const vector3D& b) {
+	return dot_product(a, b);
+}
+
+float operator*(const vector2D& a, const vector2D& b) {
+	return dot_product(a, b);
 }
 
 bool default_ondisplay(position2D pos) {
