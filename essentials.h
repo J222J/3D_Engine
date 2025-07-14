@@ -293,19 +293,6 @@ public:
 				faces.push_back(separate_into_vector(line));
 			}
 		}
-
-		/*std::cout<< "POST COMPUTATION CHECKS :\n";
-		std::cout<< "vertices : " << vertices.size() << '\n';
-		for (auto e : vertices) {
-			std::cout<< "\t(" << e.x << "; " << e.y << "; " << e.z << ")\n";
-		}
-		std::cout<< "faces : " << faces.size() << '\n';
-		for (auto e : faces) {
-			std::cout<< '\t';
-			for (int ind : e)
-				std::cout<< ind << ' ';
-			std::cout<< '\n';
-		}*/
 	}
 
 	~object() = default;
