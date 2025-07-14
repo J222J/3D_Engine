@@ -1,3 +1,5 @@
-Raycasting needs to be implemented (this will make life a bit easier as if we can tell what a ray is hitting and if we know which pixel it's passing through from the focal point then we can easily fill that pixel with what color it's supposed to be instead of fucking guessing or doing other bullshit)
+Raycasting needs to be implemented (this will make life a bit easier as if we can tell what a ray is hitting and if we know which pixel it's passing through from the focal point then we can easily fill that pixel with what color it's supposed to be instead of fucking guessing or doing other bullshit) || on the backburner for now until other stuff is fixed/implemented.
 
-The rotation function seems to be fucked up, that needs fixing. (either that or something else might be the issue but it's turning up as a rotation issue)
+The rotation function for class object needs to be fixed.
+
+movement needs to be fixed, (not an issue of the game engine itself I don't think but more of a development issue)

@@ -83,8 +83,8 @@ public:
 	}
 
 	void rotate(float x_rotation, float y_rotation, float z_rotation) { // x_rotation -> around x axis, y_rotation -> y axis, z_rotation -> z axis
-		rotate_x(x_rotation * PI / 180);
 		rotate_y(y_rotation * PI / 180);
+		rotate_x(x_rotation * PI / 180);
 		rotate_z(z_rotation * PI / 180);
 	}
 
@@ -164,13 +164,21 @@ public:
 		y -= around.y;
 		z -= around.z;
 
-		rotate_x(x_rotation * PI / 180);
 		rotate_y(y_rotation * PI / 180);
+		rotate_x(x_rotation * PI / 180);
 		rotate_z(z_rotation * PI / 180);
 	
 		x += around.x;
 		y += around.y;
 		z += around.z;
+	}
+
+	position3D rotated(float x_rotation, float y_rotation, float z_rotation, position3D around) {
+		position3D copy(x, y, z);
+
+		copy.rotate(x_rotation, y_rotation, z_rotation, around);
+
+		return copy;
 	}
 
 	position3D(float xx, float yy, float zz) {
@@ -200,7 +208,62 @@ public:
 };
 
 class object { // basically .obj file
+public:
+	float rotation_x, rotation_y, rotation_z;
+	float x, y, z;
+	std::vector<position3D> vertices;
+	std::vector<std::vector<int>> faces;
+
 private:
+/*	void rotate_x(float angle) {
+		float new_y = y * cos(angle) - z * sin(angle);
+		float new_z = y * sin(angle) + z * cos(angle);
+
+		y = new_y;
+		z = new_z;
+
+		for (auto &e : vertices) {
+			new_y = e.y * cos(angle) - e.z * sin(angle);
+			new_z = e.y * sin(angle) + e.z * cos(angle);
+
+			e.y = new_y;
+			e.z = new_z;
+		}
+	}
+
+	void rotate_y(float angle) {
+		float new_x = x * cos(angle) - z * sin(angle);
+		float new_z = x * sin(angle) + z * cos(angle);
+
+		x = new_x;
+		z = new_z;
+
+		for (auto &e : vertices) {
+			new_x = e.x * cos(angle) - e.z * sin(angle);
+			new_z = e.x * sin(angle) + e.z * cos(angle);
+
+			e.x = new_x;
+			e.z = new_z;
+		}
+	}
+
+	void rotate_z(float angle) {
+		float new_y = y * cos(angle) - x * sin(angle);
+		float new_x = y * sin(angle) + x * cos(angle);
+
+		y = new_y;
+		x = new_x;
+
+		for (auto &e : vertices) {
+			new_y = e.y * cos(angle) - e.x * sin(angle);
+			new_x = e.y * sin(angle) + e.x * cos(angle);
+
+			e.y = new_y;
+			e.x = new_x;
+		}
+	}
+*/
+
 	std::vector<std::string> separate(std::string line) {
 		std::vector<std::string> strings;
 		int ind = 2;
@@ -247,10 +310,40 @@ private:
 	}
 
 public:
-	std::vector<position3D> vertices;
-	std::vector<std::vector<int>> faces;
 
-	object(std::string path) {
+	/*void rotate(float x_rotation, float y_rotation, float z_rotation, position3D around) { // x_rotation -> around x axis, y_rotation -> y axis, z_rotation -> z axis
+		x -= around.x;
+		y -= around.y;
+		z -= around.z;
+		for (auto &e : vertices) {
+			e.x -= around.x;
+			e.y -= around.y;
+			e.z -= around.z;
+		}
+
+		rotate_y(y_rotation * PI / 180);
+		rotate_x(x_rotation * PI / 180);
+		rotate_z(z_rotation * PI / 180);
+	
+		x += around.x;
+		y += around.y;
+		z += around.z;
+		for (auto &e : vertices) {
+			e.x += around.x;
+			e.y += around.y;
+			e.z += around.z;
+		}
+	}*/
+
+	position3D return_position3D() {
+		return position3D{x, y, z};
+	}
+
+	object(std::string path, position3D position = position3D{0, 0, 0}) {
+		x = position.x;
+		y = position.y;
+		z = position.z;
+
 		std::ifstream obj(path);
 		if (!obj.is_open()) {
 			std::cerr<< "file : " << path << " doesn't exist.\n";
@@ -328,7 +421,7 @@ public:
 		return position2D{coordinate_x, coordinate_y};
 	} */
 
-	position2D on_screen(position3D position) {
+	position2D on_screen(position3D position, position2D offset) {
 		// add a check here to see if it's off screen maybe?
 		vector3D forw = forward();
 		vector3D to_pos = to_vector(return_position3D(), position);
@@ -351,7 +444,7 @@ public:
 		float coordinate_y = height * relative_coordinate_y / cam_height;
 		float coordinate_x = width * relative_coordinate_x / cam_width;
 
-		return position2D{coordinate_x, coordinate_y};
+		return position2D{coordinate_x+offset.x, coordinate_y+offset.y};
 	}
 
 	void move(vector3D direction, float mult) {
@@ -360,12 +453,12 @@ public:
 		z += direction.z * mult;
 	}
 
-	void draw_object(object obj, bool (*on_display)(position2D) = &default_ondisplay) {
+	void draw_object(object obj, position2D offset = position2D{-1, -1}, bool (*on_display)(position2D) = &default_ondisplay) {
 		std::vector<position3D> verts = obj.vertices;
 
 		for (auto face : obj.faces) {
 			for (int i = 0; i < face.size(); i++) {
-				line(on_screen(verts[face[i]-1]), on_screen(verts[face[(i+1)%face.size()]-1]), colour{0, 0, 0}, 1.0f, on_display);
+				line(on_screen(verts[face[i]-1].rotated(obj.rotation_x, obj.rotation_y, obj.rotation_z, obj.return_position3D()), offset), on_screen(verts[face[(i+1)%face.size()]-1].rotated(obj.rotation_x, obj.rotation_y, obj.rotation_z, obj.return_position3D()), offset), colour{0, 0, 0}, 1.0f, on_display);
 			}
 		}
 	}
@@ -385,6 +478,26 @@ public:
 	~camera() = default;
 };
 
+bool operator==(const position2D& a, const position2D& b) {
+	return (a.x == b.x and a.y == b.y);
+}
+
+bool operator==(const position3D& a, const position3D& b) {
+	return (a.x == b.x and a.y == b.y and a.z == b.z);
+}
+
+bool operator==(const vector2D& a, const vector2D& b) {
+	return (a.x == b.x and a.y == b.y);
+}
+
+bool operator==(const vector3D& a, const vector3D& b) {
+	return (a.x == b.x and a.y == b.y and a.z == b.z);
+}
+
+bool operator==(const colour& a, const colour& b) {
+	return (a.r == b.r and a.g == b.g and a.b == b.b);
+}
+
 bool default_ondisplay(position2D pos) {
 	return true;
 }
@@ -392,6 +505,8 @@ bool default_ondisplay(position2D pos) {
 void line(position2D a, position2D b, colour color, float thickness, bool (*on_display)(position2D)) { //= &default_ondisplay) {
 	//std::cout<< "FROM : (" << a.x << "; " << a.y << "), TO : (" << b.x << "; " << b.y << ")\n";
 	if (!on_display(a) and !on_display(b))
+		return;
+	if (a == position2D{-1, -1} or b == position2D{-1, -1})
 		return;
 
 	float dx = b.x-a.x;
