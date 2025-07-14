@@ -298,6 +298,14 @@ public:
 	~object() = default;
 };
 
+float operator*(const vector2D& a, const vector2D& b) {
+	return dot_product(a, b);
+}
+
+float operator*(const vector3D& a, const vector3D& b) {
+	return dot_product(a, b);
+}
+
 class camera {
 public:
 	float rotation_x, rotation_y, rotation_z; // in degrees
@@ -337,7 +345,7 @@ public:
 		vector3D forw = forward();
 		vector3D to_pos = to_vector(return_position3D(), position);
 
-		if (dot_product(forw, to_pos) < 0)
+		if (forw*to_pos < 0)
 			return position2D{-1, -1};
 
 		position.rotate(-rotation_x, -rotation_y, -rotation_z, return_position3D());
@@ -408,14 +416,6 @@ bool operator==(const vector3D& a, const vector3D& b) {
 
 bool operator==(const colour& a, const colour& b) {
 	return (a.r == b.r and a.g == b.g and a.b == b.b);
-}
-
-float operator*(const vector3D& a, const vector3D& b) {
-	return dot_product(a, b);
-}
-
-float operator*(const vector2D& a, const vector2D& b) {
-	return dot_product(a, b);
 }
 
 bool default_ondisplay(position2D pos) {

@@ -1,3 +1,5 @@
 Raycasting needs to be implemented (this will make life a bit easier as if we can tell what a ray is hitting and if we know which pixel it's passing through from the focal point then we can easily fill that pixel with what color it's supposed to be instead of fucking guessing or doing other bullshit) || on the backburner for now until other stuff is fixed/implemented.
 
+detection about discarding the vertices doesn't work correctly (probably because of forward vector being retarded? who knows)
+
 rotation needs to be fixed, it currently rotates around the clobal axis which it shouldn't be doing.

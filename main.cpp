@@ -16,7 +16,8 @@ camera camera_2(0.0f, 0.0f, -10.0f, 0.05f, (float)WIDTH/2, (float)HEIGHT);
 
 object main_camera_obj("monkey.obj");
 object camera_2_obj("monkey.obj");
-object obj("test_scene.obj");
+object obj("test_scene.obj", position3D{1.0f, 0.0f, 0.0f});
+object banana("banana.obj");
 
 void reshape(int w, int h) {
 	glViewport(0, 0, w, h);
@@ -154,12 +155,17 @@ void display() {
     obj.rotation_y += 1.0f;
     if (obj.rotation_y >= 360.0f)
         obj.rotation_y -= 360.0f;
+    banana.rotation_y += 1.0f;
+    if (banana.rotation_y >= 360.0f)
+        banana.rotation_y -= 360.0f;
 
     main_camera.draw_object(obj, position2D{0, 0}, &on_display_1);
     main_camera.draw_object(camera_2_obj, position2D{0, 0}, &on_display_1);
+    main_camera.draw_object(banana, position2D{0, 0}, &on_display_1);
 
     camera_2.draw_object(obj, position2D{WIDTH/2, 0}, &on_display_2);
     camera_2.draw_object(main_camera_obj, position2D{WIDTH/2, 0}, &on_display_2);
+    camera_2.draw_object(banana, position2D{0, 0}, &on_display_2);
 
     // cursor 1
     line(position2D{WIDTH/4-7, HEIGHT/2}, position2D{WIDTH/4+7, HEIGHT/2}, colour{255, 0, 0}, 2.0f);
@@ -168,7 +174,6 @@ void display() {
     // cursor 2
     line(position2D{WIDTH/2 + WIDTH/4-7, HEIGHT/2}, position2D{WIDTH/2 + WIDTH/4+7, HEIGHT/2}, colour{255, 0, 0}, 2.0f);
     line(position2D{WIDTH/2 + WIDTH/4, HEIGHT/2-7}, position2D{WIDTH/2 + WIDTH/4, HEIGHT/2+7}, colour{255, 0, 0}, 2.0f);
-
 
     line(position2D{WIDTH/2, 0}, position2D{WIDTH/2, HEIGHT}, colour{255, 0, 0}, 2.0f);
 
